@@ -1,123 +1,116 @@
+
 import React, { useState } from 'react';
-import { Product, Order, User, OrderStatus, Review, ContactMessage, MeetingRequest } from '../types';
+import { Product, Order, User, Review, ContactMessage, MeetingRequest, WarrantyClaim, UserRole, OrderStatus } from '../types';
+import { DashboardView, ProductsView, OrdersView, UsersView, InboxView } from './AdminViews';
 import { DashboardIcon } from './icons/DashboardIcon';
 import { ProductsIcon } from './icons/ProductsIcon';
 import { PackageIcon } from './icons/PackageIcon';
 import { UsersIcon } from './icons/UsersIcon';
 import { InboxIcon } from './icons/InboxIcon';
-import { CalendarIcon } from './icons/CalendarIcon';
-import { AdminOverview, AdminProducts, AdminOrders, AdminUsers, AdminMessages, AdminBookings } from './AdminViews';
+import { XIcon } from './icons/XIcon';
+
+
+type AdminView = 'dashboard' | 'products' | 'orders' | 'users' | 'inbox';
 
 interface AdminDashboardProps {
+  isOpen: boolean;
+  onClose: () => void;
   products: Product[];
   orders: Order[];
   users: User[];
+  reviews: Review[];
   contactMessages: ContactMessage[];
   meetingRequests: MeetingRequest[];
-  currentUser: User;
-  onAddProduct: (product: Omit<Product, 'id' | 'reviews' | 'rating'>) => void;
+  warrantyClaims: WarrantyClaim[];
   onUpdateProduct: (product: Product) => void;
+  onAddProduct: (product: Omit<Product, 'id' | 'rating' | 'reviews'>) => void;
   onDeleteProduct: (productId: number) => void;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
-  onUpdateUserRole: (userId: number, role: 'Admin' | 'Customer') => void;
-  onAddAdmin: (newAdmin: Omit<User, 'id' | 'status' | 'registeredAt'>) => void;
-  onUpdateReviewStatus: (reviewId: number, productId: number, status: Review['status']) => void;
-  onUpdateMessageStatus: (messageId: number, status: ContactMessage['status']) => void;
-  onUpdateBookingStatus: (bookingId: number, status: MeetingRequest['status']) => void;
+  onUpdateUserRole: (userId: number, role: UserRole) => void;
 }
 
-type AdminTab = 'dashboard' | 'products' | 'orders' | 'users' | 'messages' | 'bookings';
-
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-  badgeCount?: number;
-}> = ({ icon, label, isActive, onClick, badgeCount }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center w-full px-3 py-3 text-sm font-medium rounded-md transition-colors duration-200 relative ${
-      isActive
-        ? 'bg-green-500 text-white'
-        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-    }`}
-  >
-    {icon}
-    <span className="ml-3">{label}</span>
-    {badgeCount && badgeCount > 0 ? (
-      <span className="absolute right-2 top-1/2 -translate-y-1/2 block h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{badgeCount}</span>
-    ) : null}
-  </button>
+const NavItem: React.FC<{ icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }> = ({ icon, label, isActive, onClick }) => (
+    <button onClick={onClick} className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive ? 'bg-green-500 text-white' : 'text-gray-300 hover:bg-gray-700'}`}>
+        {icon}
+        <span className="ml-3">{label}</span>
+    </button>
 );
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
+    isOpen, 
+    onClose, 
+    products, 
+    orders,
+    users,
+    contactMessages,
+    onAddProduct,
+    onUpdateProduct,
+    onDeleteProduct,
+    onUpdateOrderStatus,
+    onUpdateUserRole,
+}) => {
+  const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  
+  if (!isOpen) return null;
 
-  const pendingMessagesCount = props.contactMessages.filter(m => m.status === 'Unread').length;
-  const pendingBookingsCount = props.meetingRequests.filter(b => b.status === 'Pending').length;
+  const renderView = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <DashboardView products={products} orders={orders} users={users} />;
+      case 'products':
+        return <ProductsView products={products} onAddProduct={onAddProduct} onUpdateProduct={onUpdateProduct} onDeleteProduct={onDeleteProduct} />;
+      case 'orders':
+        return <OrdersView orders={orders} onUpdateOrderStatus={onUpdateOrderStatus} />;
+      case 'users':
+        return <UsersView users={users} onUpdateUserRole={onUpdateUserRole} />;
+      case 'inbox':
+        return <InboxView messages={contactMessages} onUpdateStatus={()=>{}} />;
+      default:
+        return null;
+    }
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon className="w-5 h-5" /> },
     { id: 'products', label: 'Products', icon: <ProductsIcon className="w-5 h-5" /> },
     { id: 'orders', label: 'Orders', icon: <PackageIcon className="w-5 h-5" /> },
     { id: 'users', label: 'Users', icon: <UsersIcon className="w-5 h-5" /> },
-    { id: 'messages', label: 'Messages', icon: <InboxIcon className="w-5 h-5" />, badge: pendingMessagesCount },
-    { id: 'bookings', label: 'Bookings', icon: <CalendarIcon className="w-5 h-5" />, badge: pendingBookingsCount },
-  ];
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <AdminOverview orders={props.orders} users={props.users} products={props.products} />;
-      case 'products':
-        return <AdminProducts 
-                  products={props.products}
-                  onAddProduct={props.onAddProduct}
-                  onUpdateProduct={props.onUpdateProduct}
-                  onDeleteProduct={props.onDeleteProduct}
-                  onUpdateReviewStatus={props.onUpdateReviewStatus}
-                />;
-      case 'orders':
-        return <AdminOrders orders={props.orders} onUpdateStatus={props.onUpdateOrderStatus} />;
-      case 'users':
-        return <AdminUsers 
-                  users={props.users} 
-                  currentUser={props.currentUser}
-                  onUpdateUserRole={props.onUpdateUserRole} 
-                  onAddAdmin={props.onAddAdmin} 
-               />;
-      case 'messages':
-        return <AdminMessages messages={props.contactMessages} onUpdateStatus={props.onUpdateMessageStatus} />;
-      case 'bookings':
-        return <AdminBookings requests={props.meetingRequests} onUpdateStatus={props.onUpdateBookingStatus} />;
-      default:
-        return null;
-    }
-  };
+    { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" /> },
+  ] as const;
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
-        <aside className="w-full md:w-1/4 lg:w-1/5">
-          <div className="sticky top-24 bg-gray-800 p-4 rounded-lg space-y-2">
-            {navItems.map(item => (
-              <NavItem
-                key={item.id}
-                label={item.label}
-                icon={item.icon}
-                isActive={activeTab === item.id}
-                onClick={() => setActiveTab(item.id as AdminTab)}
-                badgeCount={item.badge}
-              />
-            ))}
-          </div>
-        </aside>
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex" onClick={onClose}>
+        <div className="flex h-full w-full" onClick={e => e.stopPropagation()}>
+            {/* Sidebar */}
+            <aside className="w-64 bg-gray-800 text-white flex flex-col p-4">
+                <div className="flex items-center justify-between mb-6">
+                   <h2 className="text-xl font-bold text-green-400">Admin Panel</h2>
+                   <button onClick={onClose} className="md:hidden p-1 rounded-full hover:bg-gray-700"><XIcon className="w-6 h-6" /></button>
+                </div>
+                <nav className="flex-grow space-y-2">
+                   {navItems.map(item => (
+                     <NavItem 
+                        key={item.id}
+                        icon={item.icon} 
+                        label={item.label} 
+                        isActive={activeView === item.id} 
+                        onClick={() => setActiveView(item.id)} 
+                     />
+                   ))}
+                </nav>
+                <div>
+                  <button onClick={onClose} className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:bg-gray-700 rounded-lg">
+                    <XIcon className="w-5 h-5 mr-3 transform rotate-90" />
+                    Close Panel
+                  </button>
+                </div>
+            </aside>
 
-        <div className="w-full md:w-3/4 lg:w-4/5">
-          {renderContent()}
+            {/* Main Content */}
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto bg-gray-900 text-white">
+                {renderView()}
+            </main>
         </div>
-      </div>
     </div>
   );
 };

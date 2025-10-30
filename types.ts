@@ -1,4 +1,10 @@
-import { ReactNode } from "react";
+
+export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+export type ReviewStatus = 'Approved' | 'Pending' | 'Rejected';
+export type UserRole = 'Customer' | 'Admin' | 'SuperAdmin';
+export type MessageStatus = 'New' | 'Read' | 'Archived';
+export type MeetingStatus = 'Pending' | 'Confirmed' | 'Completed';
+export type ClaimStatus = 'Pending' | 'Approved' | 'Rejected';
 
 export interface Review {
   id: number;
@@ -7,7 +13,7 @@ export interface Review {
   rating: number;
   comment: string;
   date: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: ReviewStatus;
 }
 
 export interface Product {
@@ -35,17 +41,35 @@ export interface Address {
   zip: string;
   country: string;
   phone: string;
-  whatsapp?: string;
 }
 
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'SuperAdmin' | 'Admin' | 'Customer';
-  status: 'Active' | 'Pending Setup' | 'Inactive';
-  registeredAt: string;
+  password?: string;
+  role: UserRole;
   address?: Address;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  customerId: number;
+  customerName: string;
+  date: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  total: number;
+  shippingAddress: Address;
+  carrier?: { name: string; trackingUrl: string };
+  trackingNumber?: string;
+  estimatedDelivery?: string;
 }
 
 export interface FilterState {
@@ -54,26 +78,23 @@ export interface FilterState {
   rating: number;
 }
 
-export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-
-export interface Order {
-  id: string;
-  customerId: number;
-  customerName: string;
+export interface MeetingRequest {
+  id: number;
+  name: string;
+  email: string;
   date: string;
-  status: OrderStatus;
-  items: {
-    product: Product;
-    quantity: number;
-  }[];
-  total: number;
-  shippingAddress: Address;
-  carrier?: {
-      name: string;
-      trackingUrl: string; // URL with a placeholder for the tracking number, e.g., 'https://carrier.com/track?id='
-  };
-  trackingNumber?: string;
-  estimatedDelivery?: string;
+  time: string;
+  topic: string;
+  status: MeetingStatus;
+}
+
+export interface WarrantyClaim {
+  id: number;
+  productName: string;
+  purchaseDate: string;
+  issueDescription: string;
+  fileName?: string;
+  status: ClaimStatus;
 }
 
 export interface ContactMessage {
@@ -83,24 +104,5 @@ export interface ContactMessage {
   subject: string;
   message: string;
   date: string;
-  status: 'Unread' | 'Read' | 'Archived';
-}
-
-export interface MeetingRequest {
-    id: number;
-    name:string;
-    email: string;
-    date: string;
-    time: string;
-    topic: string;
-    status: 'Pending' | 'Accepted' | 'Declined';
-}
-
-export interface WarrantyClaim {
-  id: number;
-  productName: string;
-  purchaseDate: string;
-  issueDescription: string;
-  fileName?: string;
-  status: 'Pending' | 'In Review' | 'Resolved' | 'Rejected';
+  status: MessageStatus;
 }

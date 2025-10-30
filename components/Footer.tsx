@@ -4,6 +4,7 @@ import { InstagramIcon } from './icons/InstagramIcon';
 import { LinkedInIcon } from './icons/LinkedInIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { YouTubeIcon } from './icons/YouTubeIcon';
+import { User } from '../types';
 
 const SocialLink: React.FC<{ href: string; icon: React.ReactNode }> = ({ href, icon }) => (
   <a href={href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-400 transition-colors">
@@ -12,6 +13,7 @@ const SocialLink: React.FC<{ href: string; icon: React.ReactNode }> = ({ href, i
 );
 
 interface FooterProps {
+    currentUser: User | null;
     onBookMeetingClick: () => void;
     onTrackOrderClick: () => void;
     onWarrantyClick: () => void;
@@ -32,6 +34,7 @@ const FooterLink: React.FC<{ href?: string; onClick?: () => void; children: Reac
 };
 
 export const Footer: React.FC<FooterProps> = ({ 
+    currentUser,
     onBookMeetingClick, 
     onTrackOrderClick, 
     onWarrantyClick,
@@ -95,7 +98,9 @@ export const Footer: React.FC<FooterProps> = ({
 
         <div className="mt-8 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
           <p>&copy; {new Date().getFullYear()} Buyflex. All Rights Reserved.</p>
-          <p className="mt-1">Super Admin Login: `super@buyflex.com` / `super123`</p>
+          {currentUser?.role === 'SuperAdmin' && (
+            <p className="mt-1">Super Admin Login: `super@buyflex.com` / `super123`</p>
+          )}
         </div>
       </div>
     </footer>
